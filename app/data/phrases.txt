@@ -1,0 +1,105 @@
+apartment 
+studio 
+house
+townhouse 
+suburb
+region
+area
+areas
+regions
+region
+districts
+district
+surrounding suburbs 
+surrounding areas 
+surrounding area 
+with
+carpark
+car park 
+carspace 
+car space 
+many
+lots
+lots of
+frequent
+infrequent
+one
+two
+three
+four
+five
+six
+seven
+eight 
+nine
+ten
+eleven
+twelve
+thirteen
+bedroom
+bathroom 
+study
+garage
+internet
+NBN
+high-speed
+cable internet
+speed
+main road 
+street
+road
+highway
+traffic
+transport
+hour
+minutes
+going up
+going down
+price
+value
+good value 
+bad value 
+walking distance 
+biking distance
+cycling distance 
+driving distance
+between
+in the range
+range 
+range of
+to 
+from
+under
+over
+greater than 
+less than 
+more than 
+less 
+more 
+close to 
+nearby
+far from 
+far to 
+nearby 
+within 
+at least 
+at most 
+train station 
+train 
+bus station 
+bus 
+light rail 
+rail station 
+railway station 
+station 
+bike path 
+bike hire 
+car hire 
+uber 
+views 
+beach 
+crime rate 
+crime 
+dollars 
+$ 
+available

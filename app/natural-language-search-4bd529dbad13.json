@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "natural-language-search-240522",
+  "private_key_id": "4bd529dbad131ec910d48edd96fdb91512e1ee29",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC18GDfPwL5Ypjf\n3Qnscf9pCkvAWHb6UQzFDEjnsHJfz2W+Gd33PkfU6zXbK8KtnWXoJO/CONcptttO\n93S4fgD29+9GOJlgnhhbWyL5LjwpO6Al9EjsfFcHWeoMzV30KEhWKcTxI5Xb2gat\ntA/L0LES6HQsmTpCuvJUb0nPRSR9ECCcfMG0fFuPehwchSJ+k3UEB0jz0yhHyD7x\nu9jNZUjla2tLRV6pJmMCKdbfyCORDVeqiBq/WOu9Kxe5jIcKqz0af4kiY5NyCMbB\nvHn7zA+AtZYm3//HCSZU1xtOLTZo5prRYQPJpef0DxJz7hlLpGsG+eiBmvaZGcPO\n64/bM3svAgMBAAECggEATx74uc1IyVRIAD67hJB0zuTT2ZN/Nk+N+pljkSJqMuFa\nMShFn7J9gYpCcwxeTqs++Iwrmi6m33SuffJeV6cwWzaqX0LY7KwEEqKZHH0vW40b\nEbZhCjrui/tdrfCXlcj44EOs6mMb1i7ELcE7B1s7zmm5r/V44TE0lmSJWDKM8jeV\nqI83ceI7B7j6E132/Ba9qcTT7LF88IUMKJU/bG+1oN3CJjtfhhESsqhI7oa8FI05\nD+avjo3cWdY4RNKwhe7f9Nkb3ani7oCrGMoPvFhW1Ox2qtq2gOZPyxBFKpIWIU7f\nqiEAKNouoV+dls9mDXPUK4VBF7t5r9qz95IpJ05yGQKBgQD9BDm3ED2CeSQS5rzA\nhjskjWlNZrIOnTpFoFXC7haosFI66VH+uAqk5RdROAIlO0FJic2lCp6dJSDEhaWP\nvqIdm7MI23xLHGgftKyEgULfQYf3yBz+FL8I8PGmszmUTu8o5tzUFxLUQL4VfdmZ\nfXjcvoE5e0+AuJ1l26/o3EUViQKBgQC4FZfP3XF1o+ELGQew9uWUxg1aNy2wENYM\n/hWU3xFiSGOOy6+EBQ/KD/w8eCOHmsPTjZwLzXF73zTZywnq4eNjrrNqhPbhJHCI\nkenh+XSBUG0Rmw+dCi/88Vp9ACvDBJxzNsiXyScnoI8h62nondwjQFoja/y8XxsT\nqyYfzbUU9wKBgQD3lKfpMzINNv8Oo8v1VCQRW3K8M45ucHmx4fepnBJ+FLMSRHdg\nmbSIsEeFyRmIVxhGnlqlcePNf6Q1yVU9eFvoPxAMzcEtOmnFBKV/r4DBN72Vv7Jn\nCeP5GtRLu7rPHgI2ctmJi9535bZbD1/bKwUWdC+9EKW2HnCeWD8kzE2piQKBgAW+\nfr84vLqcA4CyJkBKY/2RdIc1I5LT46oCH7BGiadUdO7WwkJPWh/HAertIMaxeJzY\nVV806O6hl2eYY1XV+J96qxSO05lQ5sYML40imJUUamLbQNB4qeitq1ItODBcq3kY\n44eA+lzNMMoxK1vb2SusbWOfkgJawWCKvaTOaXEfAoGAELTAPU/JWpHcq3U/Fks6\n2LiGs8uWrhMhxyuFDYfP5P/UAjckkzl330Ox3gtPKDWkCaZsRsa3v3f6R3M8t+1m\nuq+8XOZqaT5xeO1QslOBx7DQBBvfaYg5OsXjYlH1VSOHgONVGgUBHfcKDN8SPpw1\nkLJJanLNeb7tSrK+779ldQc=\n-----END PRIVATE KEY-----\n",
+  "client_email": "nls-service-account@natural-language-search-240522.iam.gserviceaccount.com",
+  "client_id": "117434295884522900242",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/nls-service-account%40natural-language-search-240522.iam.gserviceaccount.com"
+}
