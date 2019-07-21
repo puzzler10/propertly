@@ -3,8 +3,6 @@
 # !pip install wave
 
 #%%
-from google.cloud import speech_v1p1beta1 as speech
-from google.cloud.speech_v1p1beta1 import types
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -12,26 +10,18 @@ import dash_daq as daq
 from dash.dependencies import Input, Output, State
 import pickle
 import runpy
-import ipdb
 import base64
-import plotly.plotly as py
-import plotly.graph_objs as go
 from IPython.core.debugger import set_trace
 
 #%%
-
-# Workflow
-#import speech_to_text
-#import text_to_post_fields
-#import post_fields_to_map
-
-# Load sentence to display it
-#pickle_in = open("sen.pickle","rb")
-#sen = pickle.load(pickle_in)
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-sen = ''
+radio_options = [
+    {'label': 'Yes', 'value': 'Yes'},
+    {'label': 'No', 'value': 'No'}
+]
+no_input_msg = "You haven't said anything yet"
+
 
 # add map
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -40,82 +30,98 @@ app.layout = html.Div([
     html.H1('Find your dream home. Just ask for it.'),
     html.Br(),
     html.H2("Upload an audio file here"),
-   # dcc.Upload(html.Button('Upload File'),id='upload-button'),
-   # html.P('upload_string'),
-   html.Div([
-    dcc.Upload(id='upload-data', children = html.Button(id='upload_button',
-                                                        children='Upload File',
-                                                        n_clicks=0))
-   # dcc.Upload(id='upload-data',
-  #             children=html.Div(['Drag and Drop or ',html.A('Select Files')]),
-  #            style={'width': '100%','height': '60px', 'lineHeight': '60px',
-  #                    'borderWidth': '1px', 'borderStyle': 'dashed',
-  #                    'borderRadius': '5px','textAlign': 'center', 'margin': '10px'}),
-    ], id='upload-div'),
-    html.H3(id='output-data-upload'),
-    html.H3("Here's your search results" ),
-   # dcc.Graph(figure=fig)
-    html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
-                width ='50%', height='600')
+    html.Div(id='upload-div', children=[
+        dcc.Upload(id='upload-data', children=[
+            html.Button(id='upload_button', children='Upload File', n_clicks=0)
+        ])
+    ]),
+    dcc.Loading(id="loading-1", children=[
+        html.Div(id="loading-output-1")
+    ], type="default"),
+    html.Div(id='sen_div', children = [
+        html.H3(id='output_intro', children="Here's what we understood"),
+        html.H4(id='output_sen'),
+        html.Div(id='radio_div', children = [
+            html.H4(children="Want to edit your speech results?"),
+            dcc.RadioItems(id='edit_radio', options=radio_options, value='No'),
+        ]),
+    ], style={'display':'none'}),
+    html.Div(id='edit_speech_div', children = [
+        dcc.Input(id='edit_speech_input', style={'width': '75%'}),
+        html.Button(id='edit_button', children = "Submit"),
+    ], style= {'display': 'block'}),
+    html.Div(id='map_div', children = [
+        html.H3("Here's your search results"),
+        html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
+            width ='50%', height='600')
+    ])
 ], id='everything-div', n_clicks=0)
 
-
-#@app.callback(Output('upload_string', 'children'),
-#              [Input('upload-data', 'contents')])
-#def parse_upload_button(contents):
-#    print("the button works")
-#    print(' ')
-#    print("contents")
-#    return contents
-
-
-
-@app.callback(Output('output-data-upload', 'children'),
+@app.callback([Output('output_sen', 'children'),
+               Output('edit_speech_input', 'value'),
+               Output("loading-output-1", "children")],
               [Input('upload-data', 'contents'),
-               Input('upload_button', 'n_clicks')],
-              [State('upload-data', 'filename')])
-def parse_upload(contents, n_clicks, filename):
-    #set_trace()
-    if contents is None: print("Contents is none")
-    if contents is not None:
-        pickle_out = open("contents.pickle","wb")
-        pickle.dump(contents, pickle_out)
+               Input('edit_button', 'n_clicks')],
+              [State('upload_button', 'n_clicks'),
+               State('upload_button', 'n_clicks_timestamp'),
+               State('edit_button', 'n_clicks_timestamp'),
+               State('edit_speech_input', 'value')])
+def parse_upload(contents, n_clicks_edit, n_clicks_upload,
+                 upload_ts, edit_ts, input_value):
+    # Case that the page is just loading
+    if upload_ts is None:    upload_ts = 0
+    if edit_ts   is None:    edit_ts = 0
+    if n_clicks_upload==0 or contents is None:      return (no_input_msg,"","")
+    # Upload button press
+    if upload_ts > edit_ts:
+        if contents is not None:
+            # Parse the upload
+            pickle_out = open("contents.pickle","wb")
+            pickle.dump(contents, pickle_out)
+            pickle_out.close()
+            contents_bytes = str.encode(contents)
+            content_type, content_string = contents.split(',')
+            decoded = base64.b64decode(content_string)
+            runpy.run_path(path_name='speech_to_text.py')
+            pickle_in = open("sen.pickle","rb")
+            sen = pickle.load(pickle_in)
+    # Edit button press
+    elif edit_ts > upload_ts:
+        sen = input_value
+        pickle_out = open("sen.pickle","wb")
+        pickle.dump(sen, pickle_out)
         pickle_out.close()
-        contents_bytes = str.encode(contents)
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
+    else:                      sen = no_input_msg
+    return (sen, sen, "")
 
-#        runpy.run_path(file_path='helper.py')
-        runpy.run_path(path_name='speech_to_text.py')
+@app.callback(Output('map_div', 'children'),
+              [Input('output_sen', 'children')])
+def update_map(sen):
+    if sen == no_input_msg or sen is None:          return ""
+    else:
         runpy.run_path(path_name='text_to_post_fields.py')
         runpy.run_path(path_name='post_fields_to_map.py')
-
-        #exec(open('speech_to_text.py').read())
-        #exec(open('text_to_post_fields.py').read())
-        #exec(open('.py').read())
-
-        #import speech_to_text
-        #import text_to_post_fields
-        #import post_fields_to_map
-
-    if n_clicks==0 or contents is None:
-        sen = ''
-        return "You haven't said anything yet"
-    else:
-        if contents is None: print("hello, contents is None, and n_clicks is ", n_clicks)
-        print("number of clicks: " + str(n_clicks))
-        pickle_in = open("sen.pickle","rb")
-        sen = pickle.load(pickle_in)
-        return "Here's what we understood: " + sen
-# html.Pre(sen, style={'whiteSpace': 'pre-wrap','wordBreak': 'break-all'})
+        return html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
+                width ='50%', height='600')
 
 
 
+#### Hiding and showing div's. #####
+@app.callback(Output('edit_speech_div', "style" ),
+        [Input('edit_radio', 'value')])
+def show_editable_input(radio_value):
+    if radio_value == "Yes":     return {'display': 'block'}
+    else:                        return {'display': 'none'}
 
-#@app.callback(Output('map', 'figure'))
-#def make_main_figure(map_layout, data):
-#    figure = dict(data=data, layout=map_layout)
-#    return map_layout
+
+@app.callback(Output('sen_div', "style"),
+            [Input('output_sen', 'children')])
+def show_sen(sen):
+    if sen == no_input_msg:          return {'display': 'none'}
+    else:                            return {'display': 'block'}
+
+
+
 #%%
 if __name__ == '__main__':
     app.run_server(debug=True, port=8050)
