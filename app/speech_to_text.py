@@ -1,3 +1,5 @@
+
+### File only runs for audio decoding. Not if you change input yourself.
 import io, glob, sys, base64
 from google.cloud import speech_v1p1beta1 as speech
 from google.cloud.speech_v1p1beta1 import types
@@ -5,7 +7,7 @@ from IPython.core.debugger import set_trace
 import pickle
 sys.path.append("./app/")  # path contains python_file.py
 from helper import *
-from references import SPEECH_CONTEXT_PHRASES, MISSPELLINGS
+from references import SPEECH_CONTEXT_PHRASES
 path_audio = './audio/flac/'
 
 
@@ -13,7 +15,7 @@ path_audio = './audio/flac/'
 credentials_file = 'natural-language-search-4bd529dbad13.json'
 # Instantiates a client
 client = speech.SpeechClient.from_service_account_file(credentials_file)
-### Load audio file manually
+### Load audio file manuallyarea
 #prototype_audio_files = glob.glob(path_audio + 'prototype*')
 #prototype_audio_files.sort()
 #file_name = prototype_audio_files[0]
@@ -68,17 +70,21 @@ for result in response.results:
     print('Transcript: {}'.format(result.alternatives[0].transcript))
 sen = result.alternatives[0].transcript
 
+print(sen)
 
-#### Clean up result
-# Run some quick rules over the input to fix some common errors
-sen = sen + ' ' # so you match words at end of sentence too
-for k,v in zip(MISSPELLINGS.keys(), MISSPELLINGS.values()):  # keys are misspels, values are wanted spellings
-    # add spaces around misspellings so you don't take part of a word by accident
-    k1,v1 = (' ' + k + ' '),(' ' + v + ' ')
-    sen = sen.replace(k,v)
-
-
-### Save result to file
 pickle_out = open("sen.pickle","wb")
 pickle.dump(sen, pickle_out)
 pickle_out.close()
+
+
+
+
+
+
+
+
+
+
+
+
+

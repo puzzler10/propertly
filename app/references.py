@@ -1,3 +1,5 @@
+path_data = './data/'
+
 DOMAIN_CREDS = {'client_id':'client_c3bcd20a4906487ba71bc2394ad5d978',
          "client_secret":"secret_0b307b7200ab553e4b586d6bd156f77e",
          "grant_type":"client_credentials",
@@ -15,10 +17,12 @@ SPEECH_CONTEXT_PHRASES = ['all one','all apartments','apartments', 'apartment', 
                     'Camperdown', 'Pymble', 'Gordon']
 
 
-SUBURBS = ['Chatswood', 'St Ives', 'Artarmon', "St Leonards", "Mosman", "Pymble", "Gordon",
-          "Newtown", "Hornsby", "Turramurra", "North Sydney", "Milsons Point", "Warrawee", "Wollstonecraft"]
+SUBURBS = open(path_data + "australia_suburbs.csv").read().split("\n")[1:]
+SUBURBS = list(set(SUBURBS))
 
-AREAS = ["Inner West", "North Shore - Lower", "North Shore", "North Shore - Upper", "Eastern Suburbs"]
+# From here: https://www.domain.com.au/Public/SiteMap.aspx
+# Defined now in a callback function
+#AREAS = open(path_data + "areas.csv").read().split('\n')[1:]
 
 
 PHRASES = {

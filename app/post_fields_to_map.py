@@ -3,6 +3,7 @@ from IPython.core.debugger import set_trace
 sys.path.append("./app/")  # path contains python_file.py
 from helper import *
 from references import DOMAIN_CREDS
+path_assets = './assets/'
 
 ### Read data
 pickle_in = open("post_fields.pickle","rb")
@@ -26,26 +27,51 @@ l = request.json()
 ### Find place to center the map
 # hack: use first property in results as map center.
 # could defs improve this. Average of lat/lon, zoom etc
-lat,lon = get_attribute(l[0], 'latitude'),get_attribute(l[0], 'longitude')
+if 'listings' in l[0].keys(): o = dict({'listing':l[0]['listings'][0]})
+else:                         o = l[0]
+lat,lon = get_attribute(o, 'latitude'),get_attribute(o, 'longitude')
 m = folium.Map(location = [lat, lon], zoom_start = 13,
               tiles='OpenStreetMap')
 
+def format_num(x):
+    """x is result of `get_attribute` function
+    Can be a float, an int, or say smth like "Not Found"
+    """
+    if x == "Not Found": return '0'
+    else:
+        try:    return str(int(float(x)))
+        except: raise ValueError("String found that wasn't 'Not Found': ", x)
+
 ### Plot markers with formatted HTML
-for o in l:
+for i,o in enumerate(l):
+    if 'listings' in o.keys():
+        print('listings triggered', i)
+        # Listings refers to multiple selling at one physical location, like
+        # a block of apartments.
+        # HACK: just pick the first one of the listings for now. Deal with it later
+        o = dict({'listing':o['listings'][0]})
     lat,lon = get_attribute(o, 'latitude'),get_attribute(o, 'longitude')
     url = "https://www.domain.com.au/" + o['listing']['listingSlug']
-    pic_url = o['listing']['media'][0]['url']
+
+    try:
+        pic_url = o['listing']['media'][0]['url']
+    except:
+        pic_url = path_assets + 'default_house_pic.jpg'
+    beds = format_num(get_attribute(o, 'bedrooms'))
+    baths = format_num(get_attribute(o, 'bathrooms'))
+    cars = format_num(get_attribute(o, 'carspaces'))
     popup_text = '<img src="' + pic_url +'" width="250" height="200"><br>' + \
     '<a href="' + url + '/" target="_blank">' + get_attribute(o, 'displayableAddress') +"</a><br>" + \
      "<b>Property Type:</b> " + get_attribute(o, 'propertyType') + "<br>" + \
-     "<b>Rent:</b> " + get_attribute(o, 'displayPrice', 'priceDetails') + "<br>" + \
-      "<b>Bedrooms:</b> " + get_attribute(o, 'bedrooms') + "<br>" + \
-      "<b>Bathrooms:</b> " + get_attribute(o, 'bathrooms') + "<br>" + \
-      "<b>Carspaces:</b> " + get_attribute(o, 'carspaces') + "<br>"
+     "<b>" + get_attribute(o, 'displayPrice', 'priceDetails') + "</b><br>" + \
+      "<b>Bedrooms:</b> " + beds + "<br>" + \
+      "<b>Bathrooms:</b> " + baths + "<br>" + \
+      "<b>Carspaces:</b> " + cars + "<br>"
     popup = folium.Popup(html=popup_text, max_width = 1000)
     add_marker(m, lat, lon, popup)
-#print(sen)
+
 m.save('property_map.html')
+
 
 
 

@@ -1,8 +1,12 @@
 import folium
+from IPython.core.debugger import set_trace
+import pandas as pd
 
 ####### TEXT TO POST FIELDS FUNCTIONS ########################
 
 def check_word(doc, word):   return True if word in [o.lemma_.strip() for o in doc] else False
+
+def check_phrase(sen, phrase):  return (' ' + phrase + ' ') in ' ' + sen + ' '
 
 def get_noun_chunks(doc):    return [o for o in doc.noun_chunks]
 
@@ -29,9 +33,9 @@ def find_cardinals_for_keyword(doc, keyword_list):
                 l += chunk.ents
     return [o.string.strip() for o in l]
 
-def check_too_many_cardinals(cardinals_keyword):
+def check_too_many_cardinals(cardinals_keyword, keyword):
     if len(cardinals_keyword) > 1:
-        print("More than one cardinal for ", keyword, "found")
+        print("More than one cardinal for " + keyword + " found")
         return False
     return True
 
@@ -51,9 +55,9 @@ def get_cardinals(doc, lemma_dict):
 
     # check that you only get one cardinal at most for each keyword
     # also check that you've picked up each one
-    check_too_many_cardinals(cardinals_bedrooms)
-    check_too_many_cardinals(cardinals_bathrooms)
-    check_too_many_cardinals(cardinals_carspaces)
+    #check_too_many_cardinals(cardinals_bedrooms, 'bedroom')
+    #check_too_many_cardinals(cardinals_bathrooms, 'bathroom')
+    #check_too_many_cardinals(cardinals_carspaces, 'carspace')
     bedroom_ok_flag  = check_keyword_not_missed(doc, cardinals_bedrooms, 'bedroom')
     bathroom_ok_flag = check_keyword_not_missed(doc, cardinals_bathrooms, 'bathroom')
     carspace_ok_flag = check_keyword_not_missed(doc, cardinals_carspaces, 'carspace')
@@ -141,36 +145,56 @@ def process_place(place, suburbs, areas):
     place: entry in places list
     suburbs: list of suburbs to recognise
     areas: list of areas to recognise"""
+    # Deal with cases like "the Inner West" and "The Inner West"
     place = ' ' + place + ' '
     if ' the ' in place: place = place.replace(' the ', '  ')
+    if ' The ' in place: place = place.replace(' The ', '  ')
     place = place.strip()
     area_flag = True if place in areas else False
     if area_flag: l = areas
     else:         l = suburbs
     cnt = 0
-    for o in l:
-        if o in place: cnt += 1
-    if cnt == 0: raise ValueError("place is not in either suburbs or areas")
-    if cnt == len(place.split(' ')) and cnt != 1:  place_l = place.split(' ')
-    else:                                          place_l = [place]
+
+    # Two cases: Chatswood Atarmon should be split, West Ryde shouldn't be split
+    if place in l:  place_l = [place]
+    else:
+        for o in l:
+            if o in place: cnt += 1
+        if cnt == 0: raise ValueError("place is not in either suburbs or areas")
+        if cnt == len(place.split(' ')) and cnt != 1:  place_l = place.split(' ')
+        else:                                          place_l = [place]
     return dict(zip(place_l, ['area' if area_flag else 'suburb' for i in range(len(place_l))]))
+
 
 def update_post_field_with_rooms(post_fields, actions, field):
     """post_fields: the thing you send to Domain
     actions: tuple with (number, modifier)
     field: one of 'bedrooms', 'bathrooms', 'carspaces'
     """
-    if not len(actions): return post_fields
-    # bit of a hack. truth is I don't know how to handle multiple modifiers for a room yet
-    actions = actions[0]
+    if not len(actions): return post_fields  # nothing specified here
     field_values = ['bedrooms', 'bathrooms', 'carspaces']
     if field not in field_values: raise ValueError("not a valid field")
-    field = field.title()
-    if   actions[1] == 'eq':   post_fields["min" + field] = actions[0];  post_fields["max" + field] = actions[0]
-    elif actions[1] == "geq":  post_fields["min" + field] = actions[0];
-    elif actions[1] == "gt":   post_fields["min" + field] = actions[0] + 1;
-    elif actions[1] == "leq":  post_fields["max" + field] = actions[0];
-    elif actions[1] == "lt":   post_fields["max" + field] = actions[0] + 1;
+    field = field.title()  # post request is case sensitive
+    if len(actions) == 1:
+        actions = actions[0]  # [()] => ()
+        actions = tuple([int(actions[0]),actions[1]]) # minCarspaces only accepts ints, not floats, and the rest doesnt matter
+        if   actions[1] == 'eq':
+            post_fields["min" + field] = actions[0];
+            post_fields["max" + field] = actions[0]
+        elif actions[1] == "geq":  post_fields["min" + field] = actions[0];
+        elif actions[1] == "gt":   post_fields["min" + field] = actions[0] + 1;
+        elif actions[1] == "leq":  post_fields["max" + field] = actions[0];
+        elif actions[1] == "lt":   post_fields["max" + field] = actions[0] + 1;
+    elif len(actions) > 1:
+        #### case where it's like "one and two bedroom apartments"
+        # this is going to be hacky because I don't want to return multiple post requests, which
+        # i think you need if you want to specify things like "2, 4 or 5 bedrooms"
+        nums,mods = [o[0] for o in actions], [o[1] for o in actions]
+        # check if all the modifiers are "equal to"
+        if sum([1 if o=='eq' else 0 for o in mods]) == len(mods):
+            # take min and max numbers, use that as min and max bedrooms or bathrooms or whatever
+            post_fields["min" + field] = min(nums);
+            post_fields["max" + field] = max(nums);
     return post_fields
 
 

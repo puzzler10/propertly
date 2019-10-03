@@ -11,56 +11,101 @@ from dash.dependencies import Input, Output, State
 import pickle
 import runpy
 import base64
+import pandas as pd
 from IPython.core.debugger import set_trace
-
+path_data = './data/'
 #%%
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-radio_options = [
-    {'label': 'Yes', 'value': 'Yes'},
-    {'label': 'No', 'value': 'No'}
+toggle_opts = [
+    {'label': 'Yes'},
+    {'label': 'No'}
 ]
+states = []
+for state in ['NSW', "QLD",'VIC', "SA", "WA", "NT", "ACT", "TAS"]:  states.append({'label': state, 'value': state})
 no_input_msg = "You haven't said anything yet"
 
 
 # add map
+external_stylesheets =["/assets/css/ionicons.min.css"]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+#app.css.append_css({'external_url': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'})
 
 app.layout = html.Div([
-    html.H1('Find your dream home. Just ask for it.'),
-    html.Br(),
-    html.H2("Upload an audio file here"),
-    html.Div(id='upload-div', children=[
-        dcc.Upload(id='upload-data', children=[
-            html.Button(id='upload_button', children='Upload File', n_clicks=0)
-        ])
-    ]),
-    dcc.Loading(id="loading-1", children=[
-        html.Div(id="loading-output-1")
-    ], type="default"),
-    html.Div(id='sen_div', children = [
-        html.H3(id='output_intro', children="Here's what we understood"),
-        html.H4(id='output_sen'),
-        html.Div(id='radio_div', children = [
-            html.H4(children="Want to edit your speech results?"),
-            dcc.RadioItems(id='edit_radio', options=radio_options, value='No'),
+    html.Header(id='header', children=[
+        html.H1("propert.ly"),
+        html.Span(className='avatar', children=[
+            html.Img(src='/assets/images/avatar_house.png', alt='')
         ]),
-    ], style={'display':'none'}),
-    html.Div(id='edit_speech_div', children = [
-        dcc.Input(id='edit_speech_input', style={'width': '75%'}),
-        html.Button(id='edit_button', children = "Submit"),
-    ], style= {'display': 'block'}),
-    html.Div(id='map_div', children = [
-        html.H3("Here's your search results"),
-        html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
-            width ='50%', height='600')
+        html.H2('Find your dream home. Just ask for it.'),
+    ]),
+    html.Hr(),
+    dcc.Loading(id="loading_sen", children=[
+         html.Div(id="loading_sen_div")
+    ], type="default"),
+    html.Div(id='main_container', children = [
+        html.Section(id='sidebar_div', className='main_item', children = [
+            html.Div(id='state_div', className='sidebar_item', children= [
+                html.H2(className='text', children='What state are you looking in?'),
+                dcc.Dropdown(id='state_dropdown', options=states, value='NSW',
+                             searchable=False, multi=False, clearable=False,
+                             style={"color":"black","width":"70%"}),
+                 html.H3(id='output_state', children='', style={"display":'none'} )
+            ]),
+            html.Div(id='upload_div', className='sidebar_item', children=[
+                html.H2(className='text', children="Upload an audio file to get started: "),
+                dcc.Upload(id='upload_data', children=[
+                    html.Button(id='upload_button', children='Upload File', n_clicks=0)
+                ])
+            ]),
+            html.Div(id='sen_div', className='sidebar_item', children = [
+                html.H3(id='output_intro', children="Here's what we understood:"),
+                html.H3(id='output_sen', className='bold'),
+                html.Div(id='toggle_div', children = [
+
+#                        <input id="toggle-on" class="toggle toggle-left" name="toggle" value="false" type="radio" checked>
+#<label for="toggle-on" class="btn">Yes</label>
+#<input id="toggle-off" class="toggle toggle-right" name="toggle" value="true" type="radio">
+#<label for="toggle-off" class="btn">No</label>
+                    html.Label(id='edit_label', htmlFor='edit_switch', children=[
+                        "Happy with your transcription?",
+                        daq.BooleanSwitch(id='edit_switch', on=False, className='toggle',
+                                          label=toggle_opts, labelPosition='bottom',
+                                          color="#FF6382")
+                    ]),
+                ]),
+            ], style={'display':'none'}),
+            html.Div(id='edit_speech_div',className='sidebar_item', children = [
+                html.H3("Edit until you are happy!"),
+                dcc.Textarea(id='edit_speech_input', style={'width': '100%'},
+                          placeholder="Put your query here!"),
+                html.Button(id='edit_button', type='submit', children = "Submit"),
+            ]),
+        ]),
+        html.Div(id='map_div', className='main_item', children = [
+            dcc.Loading(id="loading_map", children=[
+                html.Div(id="loading_map_div")
+            ], type="default"),
+            html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read())
+        ])
     ])
-], id='everything-div', n_clicks=0)
+
+], id='wrapper', n_clicks=0)
+
+
+
+@app.callback([Output('output_state', 'children')],
+              [Input('state_dropdown', 'value')])
+def update_areas(state):
+    # create temp file with areas in the state
+    pd.read_csv(path_data + "areas.csv").query("state == @state").to_csv(path_data + "areas_tmp.csv",index=False)
+    # dump state to file
+    with open(path_data + 'state.txt', 'w') as file:
+        file.write(state)
+    return [state]
 
 @app.callback([Output('output_sen', 'children'),
                Output('edit_speech_input', 'value'),
-               Output("loading-output-1", "children")],
-              [Input('upload-data', 'contents'),
+               Output("loading_sen_div", "children")],
+              [Input('upload_data', 'contents'),
                Input('edit_button', 'n_clicks')],
               [State('upload_button', 'n_clicks'),
                State('upload_button', 'n_clicks_timestamp'),
@@ -87,6 +132,7 @@ def parse_upload(contents, n_clicks_edit, n_clicks_upload,
             sen = pickle.load(pickle_in)
     # Edit button press
     elif edit_ts > upload_ts:
+        print("edited")
         sen = input_value
         pickle_out = open("sen.pickle","wb")
         pickle.dump(sen, pickle_out)
@@ -94,24 +140,25 @@ def parse_upload(contents, n_clicks_edit, n_clicks_upload,
     else:                      sen = no_input_msg
     return (sen, sen, "")
 
-@app.callback(Output('map_div', 'children'),
+@app.callback([Output('map_div', 'children'),
+               Output("loading_map_div", "children")],
               [Input('output_sen', 'children')])
 def update_map(sen):
-    if sen == no_input_msg or sen is None:          return ""
+    if sen == no_input_msg or sen is None:          return ("","")
     else:
         runpy.run_path(path_name='text_to_post_fields.py')
         runpy.run_path(path_name='post_fields_to_map.py')
-        return html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
-                width ='50%', height='600')
+        return (html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
+                width ='50%', height='600'), "")
 
 
 
-#### Hiding and showing div's. #####
+#### Hiding and showing divs. #####
 @app.callback(Output('edit_speech_div', "style" ),
-        [Input('edit_radio', 'value')])
+        [Input('edit_switch', 'on')])
 def show_editable_input(radio_value):
-    if radio_value == "Yes":     return {'display': 'block'}
-    else:                        return {'display': 'none'}
+    if radio_value:     return {'display': 'block'}
+    else:               return {'display': 'none'}
 
 
 @app.callback(Output('sen_div', "style"),
@@ -124,7 +171,13 @@ def show_sen(sen):
 
 #%%
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8050)
+    app.run_server(debug=True, port=8050, dev_tools_hot_reload_interval=1)
 
 
+#%%
+### Stress testing
 
+#sen = 'one and two bedroom apartments in Kirribilli'
+#runpy.run_path(path_name='text_to_post_fields.py')
+#runpy.run_path(path_name='post_fields_to_map.py')
+#
