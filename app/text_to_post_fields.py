@@ -16,7 +16,6 @@ state = open(path_data + 'state.txt').read()
 rent_phrases = ['rent', 'renting', 'rental', 'rented', 'lease', 'leased', 'leasing']
 buy_phrases = ['for sale',  'buying', 'buy', 'bought', 'sold', 'purchase', 'purchasing',
                'acquisition' ,'investment', 'obtain', 'obtaining', 'getting' ,'get', 'procur']
-
 ### Load saved sentence from previous
 pickle_in = open("sen.pickle","rb")
 sen = pickle.load(pickle_in)
@@ -62,8 +61,31 @@ for max_groups in range(6,0, -1):  # match the esoteric cases first
     s += '\g<'+str(i+2)+'> ' + g_word
     sen = re.sub(pattern=re_string,repl=s,string=sen)
 
-print(sen)
 
+# Replace things like "one to three bedrooms" with "one bedroom and three bedroom"
+re_string = nums + " to " + nums + " ([a-zA-z]*)"
+s= '\g<1> \g<3> to \g<2> \g<3>'
+sen = re.sub(pattern=re_string, repl=s, string=sen)
+
+
+### Replace lowercase suburbs with proper nouns
+for o in SUBURBS:
+    if check_phrase(sen, o.lower()):   sen = sen.replace(o.lower(), o)
+
+# this suburb messes things up
+if 'Sale' in sen:
+    if state != 'VIC' or check_phrase(sen.lower(), 'for sale'): sen = sen.replace('Sale', 'sale')
+sen = sen.strip()
+
+# weird bug with "one carspaces" not being picked up by doc.noun_chunks
+sen = ' '  + sen + ' '
+sen = sen.replace(' one carspaces ',' one carspace ')
+sen = sen.replace(' one bathrooms ',' one bathroom ')
+sen = sen.replace(' one bedrooms ',' one bedroom ')
+sen = sen.strip()
+
+
+print(sen)
 doc = nlp(sen)
 
 ####### Parse the sentence
@@ -154,7 +176,8 @@ post_fields = update_post_field_with_rooms(post_fields, actions_bedrooms, 'bedro
 post_fields = update_post_field_with_rooms(post_fields, actions_bathrooms, 'bathrooms')
 post_fields = update_post_field_with_rooms(post_fields, actions_carspaces, 'carspaces')
 
-### Deal with surrounding suburbs, place
+### Deal with surrounding suburbs
+
 if len(places_dict):
     for place,place_type in zip(places_dict.keys(), places_dict.values()):
         if place == "North Shore" or place == "lower North Shore": place = "North Shore - Lower"

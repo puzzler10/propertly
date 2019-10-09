@@ -8,9 +8,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_daq as daq
 from dash.dependencies import Input, Output, State
-import pickle
-import runpy
-import base64
+import pickle, re, runpy, base64
 import pandas as pd
 from IPython.core.debugger import set_trace
 path_data = './data/'
@@ -80,12 +78,13 @@ app.layout = html.Div([
                 html.Button(id='edit_button', type='submit', children = "Submit"),
             ]),
         ]),
-        html.Div(id='map_div', className='main_item', children = [
-            dcc.Loading(id="loading_map", children=[
-                html.Div(id="loading_map_div")
-            ], type="default"),
-            html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read())
-        ])
+        dcc.Loading(id="loading_map", children=[
+                html.Div(id="loading_map_div"),
+                html.Div(id='warning_div'),
+                html.Div(id='map_div', className='main_item', children = [
+                        html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read())
+            ])
+        ], type="default")
     ])
 
 ], id='wrapper', n_clicks=0)
@@ -141,16 +140,26 @@ def parse_upload(contents, n_clicks_edit, n_clicks_upload,
     return (sen, sen, "")
 
 @app.callback([Output('map_div', 'children'),
-               Output("loading_map_div", "children")],
+               Output("loading_map_div", "children"),
+               Output('warning_div', 'children')],
               [Input('output_sen', 'children')])
 def update_map(sen):
-    if sen == no_input_msg or sen is None:          return ("","")
+    if sen == no_input_msg or sen is None:          return ("","","")
     else:
         runpy.run_path(path_name='text_to_post_fields.py')
         runpy.run_path(path_name='post_fields_to_map.py')
-        return (html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
-                width ='50%', height='600'), "")
-
+        warnings = ''
+        # determine warnings and messages
+        warning_txt = open('warnings.txt').read()
+        if 'no_places_detected' in warning_txt:
+            warnings += "No specific locations detected in your search: searching everywhere.\n"
+        if 'place_not_found' in warning_txt:
+            missing_places = re.findall("\<([A-Za-z\- ]*)\>", warning_txt)
+            warnings += 'Locations "' + '", "'.join(missing_places) +'" might not be valid suburbs.'
+        if 'no_properties_found' not in warning_txt:
+            return (html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
+                                width ='50%', height='600'), "",warnings)
+        else:  return(html.H2('No properties found. Try a different search.'),"","")
 
 
 #### Hiding and showing divs. #####

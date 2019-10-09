@@ -1,13 +1,26 @@
-import requests, folium,  sys, pickle
+import requests, folium,  sys, pickle,re
 from IPython.core.debugger import set_trace
 sys.path.append("./app/")  # path contains python_file.py
 from helper import *
-from references import DOMAIN_CREDS
+from references import DOMAIN_CREDS, SUBURBS
 path_assets = './assets/'
+img_h = 200
+img_w = 250
 
 ### Read data
 pickle_in = open("post_fields.pickle","rb")
 post_fields = pickle.load(pickle_in)
+warning_txt = ''
+
+# Check if any locations were specified
+if len(post_fields['locations']) == 0:   warning_txt += 'no_places_detected\n'
+# Check if any locations are invalid
+for o in post_fields['locations']:
+    sub = o['suburb']
+    if sub not in SUBURBS:
+        warning_txt += 'place_not_found <' + sub + '>\n'
+
+re_string = "\<([A-Za-z]*)\>"
 
 ### Set up credentials
 # Get these details from https://developer.domain.com.au project portal
@@ -23,58 +36,63 @@ url = "https://api.domain.com.au/v1/listings/residential/_search"
 request = requests.post(url,headers=auth,json=post_fields)
 l = request.json()
 
+if len(l) == 2:  # error time potentially
+    if 'errors' in l.keys():  raise Exception(l)
 
-### Find place to center the map
-# hack: use first property in results as map center.
-# could defs improve this. Average of lat/lon, zoom etc
-if 'listings' in l[0].keys(): o = dict({'listing':l[0]['listings'][0]})
-else:                         o = l[0]
-lat,lon = get_attribute(o, 'latitude'),get_attribute(o, 'longitude')
-m = folium.Map(location = [lat, lon], zoom_start = 13,
-              tiles='OpenStreetMap')
-
-def format_num(x):
-    """x is result of `get_attribute` function
-    Can be a float, an int, or say smth like "Not Found"
-    """
-    if x == "Not Found": return '0'
-    else:
-        try:    return str(int(float(x)))
-        except: raise ValueError("String found that wasn't 'Not Found': ", x)
-
-### Plot markers with formatted HTML
-for i,o in enumerate(l):
-    if 'listings' in o.keys():
-        print('listings triggered', i)
-        # Listings refers to multiple selling at one physical location, like
-        # a block of apartments.
-        # HACK: just pick the first one of the listings for now. Deal with it later
-        o = dict({'listing':o['listings'][0]})
+if len(l) != 0:
+    ### Find place to center the map
+    # hack: use first property in results as map center.
+    # could defs improve this. Average of lat/lon, zoom etc
+    if 'listings' in l[0].keys(): o = dict({'listing':l[0]['listings'][0]})
+    else:                         o = l[0]
     lat,lon = get_attribute(o, 'latitude'),get_attribute(o, 'longitude')
-    url = "https://www.domain.com.au/" + o['listing']['listingSlug']
+    m = folium.Map(location = [lat, lon], zoom_start = 13,
+                  tiles='OpenStreetMap')
 
-    try:
-        pic_url = o['listing']['media'][0]['url']
-    except:
-        pic_url = path_assets + 'default_house_pic.jpg'
-    beds = format_num(get_attribute(o, 'bedrooms'))
-    baths = format_num(get_attribute(o, 'bathrooms'))
-    cars = format_num(get_attribute(o, 'carspaces'))
-    popup_text = '<img src="' + pic_url +'" width="250" height="200"><br>' + \
-    '<a href="' + url + '/" target="_blank">' + get_attribute(o, 'displayableAddress') +"</a><br>" + \
-     "<b>Property Type:</b> " + get_attribute(o, 'propertyType') + "<br>" + \
-     "<b>" + get_attribute(o, 'displayPrice', 'priceDetails') + "</b><br>" + \
-      "<b>Bedrooms:</b> " + beds + "<br>" + \
-      "<b>Bathrooms:</b> " + baths + "<br>" + \
-      "<b>Carspaces:</b> " + cars + "<br>"
-    popup = folium.Popup(html=popup_text, max_width = 1000)
-    add_marker(m, lat, lon, popup)
+    def format_num(x):
+        """x is result of `get_attribute` function
+        Can be a float, an int, or say smth like "Not Found"
+        """
+        if x == "Not Found": return '0'
+        else:
+            try:    return str(int(float(x)))
+            except: raise ValueError("String found that wasn't 'Not Found': ", x)
 
-m.save('property_map.html')
+    ### Plot markers with formatted HTML
+    for i,o in enumerate(l):
+        if 'listings' in o.keys():
+            print('listings triggered', i)
+            # Listings refers to multiple selling at one physical location, like
+            # a block of apartments.
+            # HACK: just pick the first one of the listings for now. Deal with it later
+            o = dict({'listing':o['listings'][0]})
+        lat,lon = get_attribute(o, 'latitude'),get_attribute(o, 'longitude')
+        url = "https://www.domain.com.au/" + o['listing']['listingSlug']
 
+        try:
+            # better images are too big than too small, probably
+            pic_url = o['listing']['media'][0]['url'] + '/'+str(img_h*2) + 'x' + str(img_w*2)
+        except:
+            pic_url = path_assets + 'default_house_pic.jpg'
+        beds = format_num(get_attribute(o, 'bedrooms'))
+        baths = format_num(get_attribute(o, 'bathrooms'))
+        cars = format_num(get_attribute(o, 'carspaces'))
+        popup_text = '<img src="' + pic_url +'" width="' + str(img_w) + '" height="' + str(img_h) + '"><br>' + \
+        '<a href="' + url + '/" target="_blank">' + get_attribute(o, 'displayableAddress') +"</a><br>" + \
+         "<b>Property Type:</b> " + get_attribute(o, 'propertyType') + "<br>" + \
+         "<b>" + get_attribute(o, 'displayPrice', 'priceDetails') + "</b><br>" + \
+          "<b>Bedrooms:</b> " + beds + "<br>" + \
+          "<b>Bathrooms:</b> " + baths + "<br>" + \
+          "<b>Carspaces:</b> " + cars + "<br>"
+        popup = folium.Popup(html=popup_text, max_width = 1000)
+        add_marker(m, lat, lon, popup)
+    # used to determine error message or not in main dash app
+    warning_txt += 'found_properties\n'
+    m.save('property_map.html')
+else:
+    warning_txt += 'no_properties_found\n'
 
-
-
+with open('warnings.txt', 'w') as file: file.write(warning_txt)
 ########## MAPBOX SOLUTION
 #
 #

@@ -141,8 +141,7 @@ def get_num_and_op(c, phrases_dict):
 
 def process_place(place, suburbs, areas):
     """ Tag each place as a suburb or an area. Also split them if you get
-    something like "Chatswood Atarmon"
-    place: entry in places list
+    something like "Chatswood Atarmon".
     suburbs: list of suburbs to recognise
     areas: list of areas to recognise"""
     # Deal with cases like "the Inner West" and "The Inner West"
@@ -160,7 +159,6 @@ def process_place(place, suburbs, areas):
     else:
         for o in l:
             if o in place: cnt += 1
-        if cnt == 0: raise ValueError("place is not in either suburbs or areas")
         if cnt == len(place.split(' ')) and cnt != 1:  place_l = place.split(' ')
         else:                                          place_l = [place]
     return dict(zip(place_l, ['area' if area_flag else 'suburb' for i in range(len(place_l))]))
@@ -193,8 +191,8 @@ def update_post_field_with_rooms(post_fields, actions, field):
         # check if all the modifiers are "equal to"
         if sum([1 if o=='eq' else 0 for o in mods]) == len(mods):
             # take min and max numbers, use that as min and max bedrooms or bathrooms or whatever
-            post_fields["min" + field] = min(nums);
-            post_fields["max" + field] = max(nums);
+            post_fields["min" + field] = int(min(nums));
+            post_fields["max" + field] = int(max(nums));
     return post_fields
 
 
