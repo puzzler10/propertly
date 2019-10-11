@@ -5,14 +5,15 @@
 
 import spacy, sys, pprint, pickle, re
 from IPython.core.debugger import set_trace
-from references import SUBURBS, PHRASES, LEMMAS, MISSPELLINGS
+from references import SUBURBS, PHRASES, LEMMAS, MISSPELLINGS, POSTCODES, path_data
 sys.path.append("./app/")  # path contains python_file.py
 from helper import *
 import numpy as np
-path_data = './data/'
+
 nlp = spacy.load("en_core_web_sm")
 AREAS = pd.read_csv(path_data + 'areas_tmp.csv')
 state = open(path_data + 'state.txt').read()
+rent_or_buy = open(path_data + 'rent_default.txt').read()
 rent_phrases = ['rent', 'renting', 'rental', 'rented', 'lease', 'leased', 'leasing']
 buy_phrases = ['for sale',  'buying', 'buy', 'bought', 'sold', 'purchase', 'purchasing',
                'acquisition' ,'investment', 'obtain', 'obtaining', 'getting' ,'get', 'procur']
@@ -90,7 +91,7 @@ doc = nlp(sen)
 
 ####### Parse the sentence
 noun_chunks = get_noun_chunks(doc)
-places = find_pos_in_noun_chunks(doc, 'PROPN')
+places = find_places(doc, SUBURBS)
 cardinals = get_noun_classes(doc, 'CARDINAL')
 cardinals_bedrooms,cardinals_bathrooms,cardinals_carspaces = get_cardinals(doc, LEMMAS)
 
@@ -120,7 +121,10 @@ surrounding_suburbs_flag = 'surrounding suburb' in str(doc)
 #    if between_flag:
 #        print('do something here ')
 #### Logic
-if not rent_flag and not buy_flag: rent_flag = True
+if not rent_flag and not buy_flag:
+    if   rent_or_buy == 'rent':    rent_flag = True
+    elif rent_or_buy == 'buy':     buy_flag = True
+    else: raise Exception('something ain\'t right here')
 if not apartment_flag and not house_flag: apartment_flag = True; house_flag = True;
 
 
@@ -183,7 +187,10 @@ if len(places_dict):
         if place == "North Shore" or place == "lower North Shore": place = "North Shore - Lower"
         if place == "upper North Shore": place = "North Shore - Upper"
         loc_dict = {"state":state, place_type: place}
-        if surrounding_suburbs_flag: loc_dict["includeSurroundingSuburbs"] = "true"
+        if surrounding_suburbs_flag:
+            loc_dict["includeSurroundingSuburbs"] = "true"
+            postcode = str(int(POSTCODES.query('state == "' + state + '"and suburb=="' + place.upper() + '"')['postcode']))
+            loc_dict['postcode'] = postcode
         post_fields["locations"] += [loc_dict]
 pprint.pprint(post_fields)
 

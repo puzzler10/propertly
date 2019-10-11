@@ -7,8 +7,7 @@ from IPython.core.debugger import set_trace
 import pickle
 sys.path.append("./app/")  # path contains python_file.py
 from helper import *
-from references import SPEECH_CONTEXT_PHRASES
-path_audio = './audio/flac/'
+from references import SPEECH_CONTEXT_PHRASES, path_audio
 
 
 ### Authentication

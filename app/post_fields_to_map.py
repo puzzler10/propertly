@@ -2,8 +2,9 @@ import requests, folium,  sys, pickle,re
 from IPython.core.debugger import set_trace
 sys.path.append("./app/")  # path contains python_file.py
 from helper import *
-from references import DOMAIN_CREDS, SUBURBS
+from references import DOMAIN_CREDS, SUBURBS, path_data
 path_assets = './assets/'
+
 img_h = 200
 img_w = 250
 
@@ -13,14 +14,16 @@ post_fields = pickle.load(pickle_in)
 warning_txt = ''
 
 # Check if any locations were specified
-if len(post_fields['locations']) == 0:   warning_txt += 'no_places_detected\n'
-# Check if any locations are invalid
-for o in post_fields['locations']:
-    sub = o['suburb']
-    if sub not in SUBURBS:
-        warning_txt += 'place_not_found <' + sub + '>\n'
-
-re_string = "\<([A-Za-z]*)\>"
+if len(post_fields['locations']) == 0:
+    warning_txt += 'no_places_detected\n'
+    state = open(path_data + 'state.txt').read()
+    post_fields['locations'] = [{'state': state}]
+else:
+    # Check if any locations are invalid
+    for o in post_fields['locations']:
+        sub = o['suburb']
+        if sub not in SUBURBS:
+            warning_txt += 'place_not_found <' + sub + '>\n'
 
 ### Set up credentials
 # Get these details from https://developer.domain.com.au project portal
@@ -36,17 +39,19 @@ url = "https://api.domain.com.au/v1/listings/residential/_search"
 request = requests.post(url,headers=auth,json=post_fields)
 l = request.json()
 
+if len(l) == 200: warning_txt += 'prop_limit_hit\n'
+
 if len(l) == 2:  # error time potentially
     if 'errors' in l.keys():  raise Exception(l)
 
-if len(l) != 0:
+if len(l) !=     0:
     ### Find place to center the map
     # hack: use first property in results as map center.
     # could defs improve this. Average of lat/lon, zoom etc
     if 'listings' in l[0].keys(): o = dict({'listing':l[0]['listings'][0]})
     else:                         o = l[0]
     lat,lon = get_attribute(o, 'latitude'),get_attribute(o, 'longitude')
-    m = folium.Map(location = [lat, lon], zoom_start = 13,
+    m = folium.Map(location = [lat, lon], zoom_start = 12,
                   tiles='OpenStreetMap')
 
     def format_num(x):
@@ -78,7 +83,7 @@ if len(l) != 0:
         baths = format_num(get_attribute(o, 'bathrooms'))
         cars = format_num(get_attribute(o, 'carspaces'))
         popup_text = '<img src="' + pic_url +'" width="' + str(img_w) + '" height="' + str(img_h) + '"><br>' + \
-        '<a href="' + url + '/" target="_blank">' + get_attribute(o, 'displayableAddress') +"</a><br>" + \
+        '<a href="' + url + '/" target="_blank">' + get_attribute(o, 'displayableAddress').replace('`',"'") +"</a><br>" + \
          "<b>Property Type:</b> " + get_attribute(o, 'propertyType') + "<br>" + \
          "<b>" + get_attribute(o, 'displayPrice', 'priceDetails') + "</b><br>" + \
           "<b>Bedrooms:</b> " + beds + "<br>" + \
@@ -88,6 +93,7 @@ if len(l) != 0:
         add_marker(m, lat, lon, popup)
     # used to determine error message or not in main dash app
     warning_txt += 'found_properties\n'
+    m.fit_bounds(m.get_bounds())
     m.save('property_map.html')
 else:
     warning_txt += 'no_properties_found\n'

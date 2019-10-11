@@ -11,11 +11,15 @@ from dash.dependencies import Input, Output, State
 import pickle, re, runpy, base64
 import pandas as pd
 from IPython.core.debugger import set_trace
-path_data = './data/'
+from references import path_data
 #%%
 toggle_opts = [
     {'label': 'Yes'},
     {'label': 'No'}
+]
+rent_or_buy_opts = [
+    {'label': 'Rent'},
+    {'label': 'Buy'}
 ]
 states = []
 for state in ['NSW', "QLD",'VIC', "SA", "WA", "NT", "ACT", "TAS"]:  states.append({'label': state, 'value': state})
@@ -48,6 +52,12 @@ app.layout = html.Div([
                              style={"color":"black","width":"70%"}),
                  html.H3(id='output_state', children='', style={"display":'none'} )
             ]),
+            html.Div(id='rent_or_buy_div', children=[
+                html.H2(className='text', children="Default to rent or buy?"),
+                daq.BooleanSwitch(id='rent_or_buy_switch', on=False, className='toggle',
+                                          label=rent_or_buy_opts, labelPosition='bottom',
+                                          color="#FF6382")
+            ]),
             html.Div(id='upload_div', className='sidebar_item', children=[
                 html.H2(className='text', children="Upload an audio file to get started: "),
                 dcc.Upload(id='upload_data', children=[
@@ -58,11 +68,6 @@ app.layout = html.Div([
                 html.H3(id='output_intro', children="Here's what we understood:"),
                 html.H3(id='output_sen', className='bold'),
                 html.Div(id='toggle_div', children = [
-
-#                        <input id="toggle-on" class="toggle toggle-left" name="toggle" value="false" type="radio" checked>
-#<label for="toggle-on" class="btn">Yes</label>
-#<input id="toggle-off" class="toggle toggle-right" name="toggle" value="true" type="radio">
-#<label for="toggle-off" class="btn">No</label>
                     html.Label(id='edit_label', htmlFor='edit_switch', children=[
                         "Happy with your transcription?",
                         daq.BooleanSwitch(id='edit_switch', on=False, className='toggle',
@@ -80,7 +85,7 @@ app.layout = html.Div([
         ]),
         dcc.Loading(id="loading_map", children=[
                 html.Div(id="loading_map_div"),
-                html.Div(id='warning_div'),
+                html.Div(id='warning_div', style={'white-space': 'pre'}),
                 html.Div(id='map_div', className='main_item', children = [
                         html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read())
             ])
@@ -142,24 +147,40 @@ def parse_upload(contents, n_clicks_edit, n_clicks_upload,
 @app.callback([Output('map_div', 'children'),
                Output("loading_map_div", "children"),
                Output('warning_div', 'children')],
-              [Input('output_sen', 'children')])
-def update_map(sen):
+              [Input('output_sen', 'children'),
+               Input('state_dropdown', 'value'),
+               Input('rent_or_buy_switch', 'on')])
+def update_map(sen, state, rent_switch):
     if sen == no_input_msg or sen is None:          return ("","","")
     else:
+        if rent_switch: rent_msg = 'buy'
+        else:           rent_msg = 'rent'
+        with open(path_data + 'rent_default.txt', 'w') as file: file.write(rent_msg)
         runpy.run_path(path_name='text_to_post_fields.py')
         runpy.run_path(path_name='post_fields_to_map.py')
         warnings = ''
         # determine warnings and messages
         warning_txt = open('warnings.txt').read()
         if 'no_places_detected' in warning_txt:
-            warnings += "No specific locations detected in your search: searching everywhere.\n"
+            warnings += "No specific locations detected in your search: searching in " + state + ".\n"
+        if 'prop_limit_hit' in warning_txt:
+            warnings += "Showing a maximum of 200 results. Refine your search to see other properties.\n"
         if 'place_not_found' in warning_txt:
             missing_places = re.findall("\<([A-Za-z\- ]*)\>", warning_txt)
-            warnings += 'Locations "' + '", "'.join(missing_places) +'" might not be valid suburbs.'
+            if len(missing_places) == 1:
+                warnings += 'Location "' + '", "'.join(missing_places) +'" probably isn\'t a valid suburb.'
+            else:
+                warnings += 'Locations "' + '", "'.join(missing_places) +'" probably arent\'t valid suburbs.'
         if 'no_properties_found' not in warning_txt:
             return (html.Iframe(id='map', srcDoc = open('property_map.html', 'r').read(),
                                 width ='50%', height='600'), "",warnings)
-        else:  return(html.H2('No properties found. Try a different search.'),"","")
+        else:
+            warnings += """
+            Check you were understood and that suburb names are spelt correctly. Also check that the right state is selected.
+            If that didn't work, try separating suburb names with commas; like "Chatswood, West Ryde" instead of "Chatswood West Ryde".
+            Finally, perhaps your search was too specific? Try making it broader.
+            """
+            return(html.H2('No properties found. Try a different search.'),"",warnings)
 
 
 #### Hiding and showing divs. #####
@@ -182,11 +203,3 @@ def show_sen(sen):
 if __name__ == '__main__':
     app.run_server(debug=True, port=8050, dev_tools_hot_reload_interval=1)
 
-
-#%%
-### Stress testing
-
-#sen = 'one and two bedroom apartments in Kirribilli'
-#runpy.run_path(path_name='text_to_post_fields.py')
-#runpy.run_path(path_name='post_fields_to_map.py')
-#

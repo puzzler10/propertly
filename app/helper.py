@@ -15,11 +15,15 @@ def get_noun_classes(doc, words):
     ents = [(e.text, e.label_) for e in doc.ents]
     return [o[0] for o in ents if o[1] in words]
 
-def find_pos_in_noun_chunks(doc, pos):
+def find_places(doc, SUBURBS):
+    """Looks for proper nouns and identifies places"""
     l = []
     for chunk in doc.noun_chunks:
-        flag = True if pos in [word.pos_ for word in chunk] else False
+        pos_list = [word.pos_ for word in chunk]
+        flag = True if 'PROPN' in pos_list else False
         if flag: l.append(chunk.string.strip())
+        else:
+            if chunk.string in SUBURBS: l.append(chunk.string.strip())
     return l
 
 def find_cardinals_for_keyword(doc, keyword_list):

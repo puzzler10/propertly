@@ -1,2 +1,3 @@
-place_not_found <Northern-Sydney>
+no_places_detected
+prop_limit_hit
 found_properties

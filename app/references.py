@@ -1,4 +1,6 @@
+import pandas as pd
 path_data = './data/'
+path_audio = './audio/flac/'
 
 DOMAIN_CREDS = {'client_id':'client_c3bcd20a4906487ba71bc2394ad5d978',
          "client_secret":"secret_0b307b7200ab553e4b586d6bd156f77e",
@@ -20,10 +22,32 @@ SPEECH_CONTEXT_PHRASES = ['all one','all apartments','apartments', 'apartment', 
 SUBURBS = open(path_data + "australia_suburbs.csv").read().split("\n")[1:]
 SUBURBS = list(set(SUBURBS))
 
+# Postcode to suburb mapping
+POSTCODES = pd.read_csv(path_data + "australian_postcodes.csv")
+# Filter out postal boxes (ref: http://post-code.net.au/postcode/)
+ranges = [{'min': 800, 'max': 899},
+          {'min': 2000, 'max': 2599},
+          {'min': 2619, 'max': 2898},
+          {'min': 2921, 'max': 2999},
+          {'min': 2600, 'max': 2618},
+          {'min': 2900, 'max': 2920},
+          {'min': 3000, 'max': 3999},
+          {'min': 4000, 'max': 4999},
+          {'min': 5000, 'max': 5799},
+          {'min': 6000, 'max': 6797},
+          {'min': 7000, 'max': 7799}]
+s = ''
+for o in ranges:
+    s += '(postcode >= '+ str(o['min']) + ' and postcode <= ' + str(o['max']) + ') or '
+s = s[:-4] # remove last 'or'
+POSTCODES = POSTCODES.query(s)
+# Some suburbs have more than one postcode. For these we choose the lowest
+POSTCODES = POSTCODES.groupby(['suburb', 'state']).agg('min')
+
+
 # From here: https://www.domain.com.au/Public/SiteMap.aspx
 # Defined now in a callback function
 #AREAS = open(path_data + "areas.csv").read().split('\n')[1:]
-
 
 PHRASES = {
     'eq': ['equals', 'exactly'],
