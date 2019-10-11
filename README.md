@@ -26,18 +26,33 @@ Scope:
 - ~~incorrect carspace search with sentences like “houses in chatswood with one to three bathrooms and one to three carspaces”~~
   - ~~bug where carspaces go back to floats~~
 - ~~Display warning message when no location detected~~
-- Display warning message when location not found
-- center map on all properties  
-- Get microphone up 
+- ~~Display warning message when location not found~~
+- ~~automatic map fitting~~ 
 - ~~add all suburbs and areas of Sydney~~
+- ~~bug with surrounding suburbs messing up~~
+  - ~~implement australia postcodes~~
+- ~~bug with “one bedroom apartments in Leichhardt and surrounding suburbs” not picking up Leichhardt~~
+- ~~weird console error (Uncaught SyntaxError: missing ) after argument list) for “one bedroom apartments in Newtown and surrounding suburbs”~~
+  - ~~escape \` signs~~
+- ~~bug with “searching everywhere” not respecting state~~
+- ~~let the user know when they’ve hit 200 properties~~
+- ~~refine incorrect suburbs error message to show when no properties found~~  
+- error on "houses for rent with two bedrooms more than one bathroom and a carspace in Mosman”. problem with “a carspace”? regex?
+  - “Anything available for rent in Pyrmont with a car park?” carpark not being picked up 
+- Newtown not detected in “Newtown apartments with two or three bedrooms and one or two bathrooms”. problem with sentence ordering?
+- ~~Toggle to default to buy or rent?~~
+  - make coloring less confusing 
+- Add message to guide the user if no properties found
 - Add instructions, some example sentences so user is guided
 - ~~minCarspaces undefined bug~~ 
+- Get microphone up
 - redesign UI to look better 
   - redesign popup 
   - header image to jpg, diff sizes?
   - new layout 
   - webfonts
   - responsive
+  - options area for things like “rent or buy default”
 - deploy online
 
 
