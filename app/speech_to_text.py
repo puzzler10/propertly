@@ -11,10 +11,12 @@ from references import SPEECH_CONTEXT_PHRASES, path_audio
 
 
 ### Authentication
+# WILL NEED TO CHANGE THIS
 credentials_file = 'natural-language-search-4bd529dbad13.json'
 # Instantiates a client
 client = speech.SpeechClient.from_service_account_file(credentials_file)
-### Load audio file manuallyarea
+
+### Load audio file manually
 #prototype_audio_files = glob.glob(path_audio + 'prototype*')
 #prototype_audio_files.sort()
 #file_name = prototype_audio_files[0]

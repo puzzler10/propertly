@@ -1,7 +1,6 @@
 # rext 2 post fields Logic:
 # * if neither rent or buy are specified, use rent
 # * if neither house or apartment are specified, use both
-# * the word 'station' refers to a train station
 
 import spacy, sys, pprint, pickle, re
 from IPython.core.debugger import set_trace
@@ -101,25 +100,6 @@ buy_flag = np.any([check_phrase(sen, o) for o in buy_phrases])
 apartment_flag,house_flag = check_word(doc, 'apartment'),check_word(doc, 'house')
 surrounding_suburbs_flag = 'surrounding suburb' in str(doc)
 
-### Train station stuff (on hold for now)
-#station_flag,train_station_flag = 'station' in str(doc),'train station' in str(doc)
-#if station_flag or train_station_flag:
-#    within_flag,between_flag = 'within' in str(doc), 'between' in str(doc)
-#    upto_flag,under_flag = ' up to ' in str(doc), 'under' in str(doc)
-#    morethan_flag,over_flag = ' more than ' in str(doc), 'over' in str(doc)
-#    if within_flag:  station_modifier = get_nummod(doc, 'within', 2)
-#    if under_flag:   station_modifier = get_nummod(doc, 'under', 2)
-#    if over_flag:    station_modifier = get_nummod(doc, 'over', 2)
-#
-#    if upto_flag:
-#        # dodgy, bigram approach better, or smth that can handle spaces
-#        station_modifier = get_nummod(doc, 'up', 3)[1:3]
-#    if morethan_flag:
-#        # same here
-#        station_modifier = get_nummod(doc, 'more', 3)[1:3]
-#    station_dist = get_station_dist(station_modifier)
-#    if between_flag:
-#        print('do something here ')
 #### Logic
 if not rent_flag and not buy_flag:
     if   rent_or_buy == 'rent':    rent_flag = True
@@ -139,11 +119,6 @@ if not apartment_flag and not house_flag: apartment_flag = True; house_flag = Tr
 #print ("This many carspaces: ", cardinals_carspaces)
 #print("In these suburbs:", ", ".join(places))
 #if surrounding_suburbs_flag: print("Also include surrounding suburbs")
-#if station_flag or train_station_flag:
-#    if within_flag or under_flag or upto_flag:
-#        print("Less than", station_dist, "metres from a train station")
-#    if morethan_flag or over_flag:
-#        print("More than", station_dist, "metres from a train station")
 
 
 #### Words to numbers
