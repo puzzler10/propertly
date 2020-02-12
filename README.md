@@ -61,4 +61,3 @@ Styling and assets used in the app are in `/assets`. `/audio` contains example f
 
 * Implement being able to search for areas as Domain define them, like “Inner West”
 - multiple listings at one address. Currently just picks the first one in the ‘listings’ API object. Could do some nice scroll bar thing. Pair with [markerClusters](https://medium.com/@bobhaffner/folium-markerclusters-and-fastmarkerclusters-1e03b01cb7b1)
-
