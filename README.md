@@ -5,7 +5,6 @@
 App translates spoken queries to real estate property searches. In your spoken query, you can specify 
 
 - min and max ranges on bedrooms, bathrooms and carparks
-
 - Apartments or houses
 - Suburb
 - Rent or buy 
@@ -50,30 +49,16 @@ Styling and assets used in the app are in `/assets`. `/audio` contains example f
 #### Current bugs
 
 - error on "houses for rent with two bedrooms more than one bathroom and a carspace in Mosman”. problem with “a carspace”? regex?
-  
   - “Anything available for rent in Pyrmont with a car park?” carpark not being picked up 
 - Newtown not detected in “Newtown apartments with two or three bedrooms and one or two bathrooms”. problem with sentence ordering?
 - make coloring less confusing 
 - Add instructions, some example sentences so user is guided
 - redesign UI to look better 
 
-  - redesign popup 
-
-  - header image to jpg, diff sizes?
-
-  - new layout 
-
-  - webfonts
-
-  - responsive
-
-    
-
 
 
 #### Extra features 
 
 * Implement being able to search for areas as Domain define them, like “Inner West”
-
 - multiple listings at one address. Currently just picks the first one in the ‘listings’ API object. Could do some nice scroll bar thing. Pair with [markerClusters](https://medium.com/@bobhaffner/folium-markerclusters-and-fastmarkerclusters-1e03b01cb7b1)
 
