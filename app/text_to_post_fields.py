@@ -156,7 +156,6 @@ post_fields = update_post_field_with_rooms(post_fields, actions_bathrooms, 'bath
 post_fields = update_post_field_with_rooms(post_fields, actions_carspaces, 'carspaces')
 
 ### Deal with surrounding suburbs
-
 if len(places_dict):
     for place,place_type in zip(places_dict.keys(), places_dict.values()):
         if place == "North Shore" or place == "lower North Shore": place = "North Shore - Lower"
